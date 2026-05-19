@@ -140,6 +140,19 @@ export async function POST(request: NextRequest) {
     }
     const uniqueRecords = Array.from(deduped.values());
 
+    // Delete ALL existing data before inserting new file
+    const { error: deleteError } = await supabase
+      .from("datos_venta")
+      .delete()
+      .neq("id", "00000000-0000-0000-0000-000000000000"); // deletes all rows
+
+    if (deleteError) {
+      return NextResponse.json(
+        { error: "Error al limpiar datos anteriores: " + deleteError.message },
+        { status: 500 }
+      );
+    }
+
     // Insert in batches of 500 to avoid payload limits
     let totalInserted = 0;
     const batchSize = 500;
@@ -149,8 +162,7 @@ export async function POST(request: NextRequest) {
       const batch = uniqueRecords.slice(i, i + batchSize);
       const { error, count: batchCount } = await supabase
         .from("datos_venta")
-        .upsert(batch, {
-          onConflict: "codigo_cliente,marca,mes,ano",
+        .insert(batch, {
           count: "exact",
         });
 
