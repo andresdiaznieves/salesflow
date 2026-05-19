@@ -132,12 +132,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { error: upsertError, count } = await supabase
-      .from("datos_venta")
-      .upsert(records, {
-        onConflict: "codigo_cliente,marca,mes,ano",
-        count: "exact",
-      });
+    // Deduplicate: keep last occurrence for each unique key
+    const deduped = new Map<string, (typeof records)[0]>();
+    for (const r of records) {
+      const key = `${r.codigo_cliente}|${r.marca}|${r.mes}|${r.ano}`;
+      deduped.set(key, r);
+    }
+    const uniqueRecords = Array.from(deduped.values());
+
+    // Insert in batches of 500 to avoid payload limits
+    let totalInserted = 0;
+    const batchSize = 500;
+    let upsertError = null;
+
+    for (let i = 0; i < uniqueRecords.length; i += batchSize) {
+      const batch = uniqueRecords.slice(i, i + batchSize);
+      const { error, count: batchCount } = await supabase
+        .from("datos_venta")
+        .upsert(batch, {
+          onConflict: "codigo_cliente,marca,mes,ano",
+          count: "exact",
+        });
+
+      if (error) {
+        upsertError = error;
+        break;
+      }
+      totalInserted += batchCount || batch.length;
+    }
+
+    const count = totalInserted;
 
     if (upsertError) {
       return NextResponse.json(
