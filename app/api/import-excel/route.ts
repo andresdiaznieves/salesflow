@@ -140,18 +140,25 @@ export async function POST(request: NextRequest) {
     }
     const uniqueRecords = Array.from(deduped.values());
 
-    // Delete ALL existing data before inserting new file
-    const { error: deleteError } = await supabase
+    // Delete ALL existing data and old clients before inserting new file
+    const { error: deleteVentasError } = await supabase
       .from("datos_venta")
       .delete()
-      .neq("id", "00000000-0000-0000-0000-000000000000"); // deletes all rows
+      .neq("id", "00000000-0000-0000-0000-000000000000");
 
-    if (deleteError) {
+    if (deleteVentasError) {
       return NextResponse.json(
-        { error: "Error al limpiar datos anteriores: " + deleteError.message },
+        { error: "Error al limpiar datos anteriores: " + deleteVentasError.message },
         { status: 500 }
       );
     }
+
+    // Delete old auto-created clients (keep manually created ones with visits)
+    await supabase
+      .from("clientes")
+      .delete()
+      .eq("tipo_negocio", "PUNTO_DE_VENTA")
+      .neq("id", "00000000-0000-0000-0000-000000000000");
 
     // Insert in batches of 500 to avoid payload limits
     let totalInserted = 0;
