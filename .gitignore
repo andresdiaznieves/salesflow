@@ -35,3 +35,6 @@ next-env.d.ts
 
 # canvas (dev only)
 /scripts/
+
+# Local Netlify folder
+.netlify

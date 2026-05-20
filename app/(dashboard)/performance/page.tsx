@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import { useUser } from "@/hooks/use-user";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { GaugeChart } from "@/components/dashboard/gauge-chart";
@@ -48,17 +49,17 @@ export default function PerformancePage() {
 
   useEffect(() => {
     if (!usuario) return;
-    async function fetch() {
+    async function fetchData() {
       const supabase = createClient();
-      const [ventasRes, metasRes] = await Promise.all([
-        supabase.from("datos_venta").select("*"),
+      const [ventasData, metasRes] = await Promise.all([
+        fetchAllRows<DatoVenta>("datos_venta"),
         supabase.from("metas_mensuales").select("*"),
       ]);
-      setVentas(ventasRes.data || []);
+      setVentas(ventasData);
       setMetas(metasRes.data || []);
 
       const uniqueReps = [...new Set(
-        (ventasRes.data || []).map((v) => v.codigo_representante).filter(Boolean)
+        ventasData.map((v) => v.codigo_representante).filter(Boolean)
       )].sort() as string[];
       setReps(uniqueReps);
 
@@ -68,7 +69,7 @@ export default function PerformancePage() {
 
       setLoading(false);
     }
-    fetch();
+    fetchData();
   }, [usuario, isSupervisor]);
 
   // Filtered ventas for selected rep/mes

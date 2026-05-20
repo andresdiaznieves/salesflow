@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import { useUser } from "@/hooks/use-user";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { VolumeChart } from "@/components/dashboard/volume-chart";
@@ -46,17 +47,17 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!usuario) return;
-    async function fetch() {
+    async function fetchData() {
       const supabase = createClient();
-      const [ventasRes, clientesRes] = await Promise.all([
-        supabase.from("datos_venta").select("*"),
+      const [ventas, clientesRes] = await Promise.all([
+        fetchAllRows<DatoVenta>("datos_venta"),
         supabase.from("clientes").select("codigo_cliente, nombre_negocio, ciudad").eq("activo", true),
       ]);
-      setAllVentas(ventasRes.data || []);
+      setAllVentas(ventas);
       setClientes(clientesRes.data || []);
       setLoading(false);
     }
-    fetch();
+    fetchData();
   }, [usuario]);
 
   // Unique values for filter dropdowns

@@ -12,6 +12,7 @@
     "@anthropic-ai/sdk": "^0.96.0",
     "@base-ui/react": "^1.4.1",
     "@eslint/eslintrc": "^3.3.5",
+    "@netlify/plugin-nextjs": "^5.15.11",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.105.4",
     "canvas": "^3.2.3",

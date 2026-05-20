@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import { ClienteSearch } from "@/components/clientes/cliente-search";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { VolumeChart } from "@/components/dashboard/volume-chart";
@@ -55,12 +56,9 @@ export default function ComportamientoPage() {
     setMesFilter("todos");
     setInsights([]);
 
-    const supabase = createClient();
-    const { data } = await supabase
-      .from("datos_venta")
-      .select("*")
-      .eq("codigo_cliente", selected.codigo_cliente)
-      .order("ano", { ascending: true });
+    const data = await fetchAllRows<DatoVenta>("datos_venta", "*", [
+      { column: "codigo_cliente", value: selected.codigo_cliente },
+    ]);
 
     setAllVentas(data || []);
     setLoading(false);
